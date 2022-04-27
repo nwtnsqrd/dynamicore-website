@@ -367,7 +367,165 @@ After typing `dpkg-reconfigure tzdata` you will enter an interactive shell progr
 
 ## Automate the process
 ```yaml
-become: true
+# Initial server setup
+#
+---
+- hosts: all
+  become: yes
+  vars:
+    ssh_port: 1069
+    tmzone: Europe/Berlin
+    sudo_timeout: 20
+    user: pascal
+    user_passwd: pascal
+    ssh_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub')  }}"
+
+  tasks:
+    - name: Get datestamp from the system
+      shell: date +"%Y%m%d"
+      register: dstamp
+
+    - name: Set current date stamp varible
+      set_fact:
+        cur_date: "{{ dstamp.stdout }}"
+
+    # Update and install the base software
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Upgrade installed apt packages 
+      apt:
+        upgrade: dist
+      register: upgrade
+      retries: 15
+      delay: 5
+      until: upgrade is success
+
+    - name: Ensure that these software packages are installed
+      apt:
+        pkg:
+          - net-tools
+          - nano
+          - unzip
+          - libpam-google-authenticator
+        state: latest
+
+    - name: Check if a reboot is needed for Debian-based systems
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    # Host Setup
+    - name: Set static hostname
+      hostname:
+        name: "{{ inventory_hostname_short }}"
+
+    - name: Add FQDN to /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: '127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname_short }}'
+        state: present
+
+    - name: Check if cloud init is installed.
+      stat: path="/etc/cloud/templates/hosts.debian.tmpl"
+      register: cloud_installed
+
+    - name: Add FQDN to /etc/cloud/templates/hosts.debian.tmpl
+      lineinfile:
+        dest: /etc/cloud/templates/hosts.debian.tmpl
+        regexp: '^127\.0\.1\.1'
+        line: "127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname_short }}"
+        state: present
+      when: cloud_installed.stat.exists
+
+    - name: set timezone
+      timezone:
+        name: "{{ tmzone }}"
+
+    - name: Set ssh '{{ ssh_port }}' port number
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: 'Port '
+        line: 'Port {{ ssh_port }}'
+        state: present
+      notify:
+        - restart sshd
+
+    - name: Create/update regular user with sudo privileges
+      user:
+        name: "{{ user }}"
+        password: "{{ user_passwd | password_hash('sha512') }}"
+        state: present
+        groups: sudo
+        append: true
+        shell: /bin/bash
+
+    - name: Ensure authorized keys for remote user is installed
+      authorized_key:
+        user: "{{ user }}"
+        state: present
+        key: "{{ ssh_pub_key }}"
+
+    - name: Ensure authorized key for root user is installed
+      authorized_key:
+        user: root
+        state: present
+        key: "{{ ssh_pub_key }}"
+
+    - name: Disable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify:
+        - restart sshd
+
+    - name: Disable tunneled clear-text passwords
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify:
+        - restart sshd
+
+    - name: Enable passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo'
+        line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Reboot the server if needed
+      reboot:
+        msg: "Reboot initiated by Ansible because of reboot required file."
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: whoami
+      when: reboot_required.stat.exists
+
+    - name: Remove old packages from the cache
+      apt:
+        autoclean: yes
+
+    - name: Remove dependencies that are no longer needed
+      apt:
+        autoremove: yes
+        purge: yes
+
+  handlers:
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
+
 ```
 
 ## Configure Firewall
