@@ -55,9 +55,9 @@ params:
 
   # profile-mode
   profileMode:
-    enabled: false # needs to be explicitly set
-    title: ExampleSite
-    subtitle: "This is subtitle"
+    enabled: true # needs to be explicitly set
+    title: DynamiCore
+    subtitle: "A collection of tutorials, thoughts and cheatsheets."
     imageUrl: "<img location>"
     imageWidth: 120
     imageHeight: 120
@@ -65,13 +65,13 @@ params:
     buttons:
       - name: Posts
         url: posts
-      - name: Tags
-        url: tags
+      - name: About
+        url: about
 
   # home-info mode
   homeInfoParams:
     Title: "Hi there \U0001F44B"
-    Content: Welcome to my blog
+    Content: still under construction
 
   #socialIcons:
   #  - name: twitter
@@ -90,14 +90,14 @@ params:
   #    SiteVerificationTag: "XYZabc"
 
   cover:
-    hidden: true # hide everywhere but not in structured data
-    hiddenInList: true # hide on list pages and home
-    hiddenInSingle: true # hide on single page
+    hidden: false # hide everywhere but not in structured data
+    hiddenInList: false # hide on list pages and home
+    hiddenInSingle: false # hide on single page
 
-  #editPost:
-  #  URL: "https://github.com/<path_to_repo>/content"
-  #  Text: "Suggest Changes" # edit text
-  #  appendFilePath: true # to append file path to Edit link
+  editPost:
+    URL: "https://github.com/nwtnsqrd/dynamicore-website/blob/main/content"
+    Text: "Suggest Changes" # edit text
+    appendFilePath: true # to append file path to Edit link
 
   # for search
   # https://fusejs.io/api/options.html
@@ -119,10 +119,15 @@ menu:
       name: tags
       url: /tags/
       weight: 20
-    - identifier: example
-      name: example.org
-      url: https://example.org
+    - identifier: cheatsheets
+      name: cheatsheets
+      url: /cheatsheets/
       weight: 30
+    - identifier: about
+      name: about
+      url: /about/
+      weight: 40
+    
 # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
 # pygmentsUseClasses: true
 # markup:
