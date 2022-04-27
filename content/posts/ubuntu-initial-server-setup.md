@@ -25,11 +25,6 @@ cover:
     alt: "Ubuntu Logo" # alt text
     caption: "" # display caption under cover
     relative: false # when using page bundles set this to true
-    hidden: false # only hide on current single page
-editPost:
-    URL: "https://github.com/nwtnsqrd/dynamicore-website/blob/main/content"
-    Text: "Suggest Changes" # edit text
-    appendFilePath: true # to append file path to Edit link
 ---
 [![DigitalOcean Referral Badge](https://web-platforms.sfo2.digitaloceanspaces.com/WWW/Badge%202.svg)](https://www.digitalocean.com/?refcode=59d9eefafa3c&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge)
 
